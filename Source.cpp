@@ -12,18 +12,18 @@
 #include "miniz.h"
 using namespace std;
 
-void Compression(std::string Filename, bool bDecompress)
+void Compression(string Filename, bool bDecompress)
 {
-    std::fstream::pos_type size = 0;
-    if (std::ifstream fileSize{ Filename, std::ios::binary | std::ios::in | std::ios::ate })
+    fstream::pos_type size = 0;
+    if (ifstream fileSize{ Filename, ios::binary | ios::in | ios::ate })
     {
         size = fileSize.tellg();
     }
     if (bDecompress)
     {
-        if (std::ifstream file{ Filename, std::ios::binary })
+        if (ifstream file{ Filename, ios::binary })
         {
-            std::vector<uint8_t> fileBuffer((unsigned int)size);
+            vector<uint8_t> fileBuffer((unsigned int)size);
             file.read((char*)fileBuffer.data(), fileBuffer.size());
 
             mz_ulong decompressedSizeULong = mz_ulong(size * 1032); //This is the upper byte limit
@@ -34,30 +34,30 @@ void Compression(std::string Filename, bool bDecompress)
             {
                 cout << "An error has occured uncompressing DPAK (error code: " << zerror << ")\n";
             }
-            std::ofstream NewFile(Filename + "_Uncompressed", std::ios::out | std::ofstream::binary);
+            ofstream NewFile(Filename + "_Uncompressed", ios::out | ofstream::binary);
             NewFile.write((char*)&decompressedBuffer[0], decompressedSizeULong);
         }
     }
     else
     {
-        if (std::ifstream file{ Filename, std::ios::binary })
+        if (ifstream file{ Filename, ios::binary })
         {
-            std::vector<uint8_t> fileBuffer((unsigned int)size);
+            vector<uint8_t> fileBuffer((unsigned int)size);
             file.read((char*)fileBuffer.data(), fileBuffer.size());
 
             vector<uint8_t> compressedBuffer((unsigned int)size);
             mz_ulong compressedSizeLong = (mz_ulong)size;
             compress(compressedBuffer.data(), &compressedSizeLong, fileBuffer.data(), (mz_ulong)size);
 
-            std::ofstream NewFile(Filename + "_Compressed", std::ios::out | std::ofstream::binary);
+            ofstream NewFile(Filename + "_Compressed", ios::out | ofstream::binary);
             NewFile.write((char*)&compressedBuffer[0], compressedSizeLong);
         }
     }
 }
 
-void ExtractDPAK(std::string Filename)
+void ExtractDPAK(string Filename)
 {
-    if (std::ifstream file{ Filename, std::ios::binary })
+    if (ifstream file{ Filename, ios::binary })
     {
         uint32_t Magic;
         file.read(reinterpret_cast<char*>(&Magic), 4);
@@ -66,8 +66,8 @@ void ExtractDPAK(std::string Filename)
 #endif
         if (Magic == 1146110283 || Magic == 1262571588) //DPAK (Both Big and Little Endian)
         {
-            std::vector<int> AssetSizes;
-            std::vector<string> AssetIDs;
+            vector<int> AssetSizes;
+            vector<string> AssetIDs;
 
             uint16_t AssetCount;
             file.read(reinterpret_cast<char*>(&AssetCount), sizeof(AssetCount));
@@ -91,25 +91,25 @@ void ExtractDPAK(std::string Filename)
                 cout << "Asset Name Size: " << IDLength << "\n";
 #endif
 
-                std::vector<char> buffer(IDLength);
+                vector<char> buffer(IDLength);
                 file.read(buffer.data(), buffer.size());
-                std::string s(buffer.begin(), buffer.end());
+                string s(buffer.begin(), buffer.end());
 #if !NDEBUG
                 cout << "Asset Name: " << s << "\n";
 #endif
                 AssetIDs.push_back(s);
             }
 
-            std::string base_filename = Filename.substr(Filename.find_last_of("/\\") + 1);
-            std::string::size_type const p(base_filename.find_last_of('.'));
-            std::string file_without_extension = base_filename.substr(0, p);
+            string base_filename = Filename.substr(Filename.find_last_of("/\\") + 1);
+            string::size_type const p(base_filename.find_last_of('.'));
+            string file_without_extension = base_filename.substr(0, p);
 #if !NDEBUG
             cout << "FileName: " << base_filename;
 #endif
 
             string directory;
             const size_t last_slash_idx = Filename.rfind('\\');
-            if (std::string::npos != last_slash_idx)
+            if (string::npos != last_slash_idx)
             {
                 directory = Filename.substr(0, last_slash_idx);
             }
@@ -119,17 +119,17 @@ void ExtractDPAK(std::string Filename)
             for (int i = 0; i < AssetCount; i++)
             {
                 string NewFilePath = directory + "\\" + AssetIDs[i];
-                std::replace(NewFilePath.begin(), NewFilePath.end(), '/', '\\');
+                replace(NewFilePath.begin(), NewFilePath.end(), '/', '\\');
                 string SubDirectory;
                 const size_t last_slash_idx_Sub = NewFilePath.rfind('\\');
-                if (std::string::npos != last_slash_idx_Sub)
+                if (string::npos != last_slash_idx_Sub)
                 {
                     SubDirectory = NewFilePath.substr(0, last_slash_idx_Sub);
                 }
-                std::filesystem::create_directories(SubDirectory);
+                filesystem::create_directories(SubDirectory);
 
-                std::ofstream NewFile(directory + "\\" + AssetIDs[i], std::ios::out | std::ofstream::binary);
-                std::vector<char> buffer(AssetSizes[i]);
+                ofstream NewFile(directory + "\\" + AssetIDs[i], ios::out | ofstream::binary);
+                vector<char> buffer(AssetSizes[i]);
                 file.read(buffer.data(), buffer.size());
                 NewFile.write(buffer.data(), buffer.size());
                 NewFile.close();
@@ -138,21 +138,21 @@ void ExtractDPAK(std::string Filename)
     }
 }
 
-void PackageDPAK(std::string Folder)
+void PackageDPAK(string Folder)
 {
-    std::filesystem::path folderPath(Folder);
-    std::string fileName = folderPath.filename().string();
+    filesystem::path folderPath(Folder);
+    string fileName = folderPath.filename().string();
 
     ofstream createdFile(Folder + "\\..\\" + fileName + ".dpak", ios::out | ios::binary);
     uint16_t AssetCount = 0;
-    std::vector<int> AssetSizes;
-    std::vector<string> AssetIDs;
-    std::vector<string> FileNames;
+    vector<int> AssetSizes;
+    vector<string> AssetIDs;
+    vector<string> FileNames;
     for (const auto& entry : filesystem::recursive_directory_iterator(Folder))
     {
         AssetCount++;
-        std::fstream::pos_type size = 0;
-        if (std::ifstream fileSize{ entry, std::ios::binary | std::ios::in | std::ios::ate })
+        fstream::pos_type size = 0;
+        if (ifstream fileSize{ entry, ios::binary | ios::in | ios::ate })
         {
             size = fileSize.tellg();
             fileSize.close();
@@ -174,12 +174,12 @@ void PackageDPAK(std::string Folder)
     }
     for (int i = 0; i < AssetCount; i++)
     {
-        if (std::ifstream fileSize{ Folder + "\\" + FileNames[i], std::ios::binary})
+        if (ifstream fileSize{ Folder + "\\" + FileNames[i], ios::binary})
         {
 #if !NDEBUG
             cout << Folder + "\\" + FileNames[i] << "\n";
 #endif
-            std::vector<uint8_t> buffer(AssetSizes[i]);
+            vector<uint8_t> buffer(AssetSizes[i]);
             fileSize.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
             fileSize.close();
             createdFile.write((char*)&buffer[0], buffer.size());
@@ -189,11 +189,11 @@ void PackageDPAK(std::string Folder)
     Compression(Folder + "\\..\\" + fileName + ".dpak", false);
 }
 
-void Handler(std::string Filename, bool bDecompile)
+void Handler(string Filename, bool bDecompile)
 {
     if (bDecompile)
     {
-        if (std::ifstream file{ Filename, std::ios::binary })
+        if (ifstream file{ Filename, ios::binary })
         {
             uint32_t Magic;
             file.read(reinterpret_cast<char*>(&Magic), 4);

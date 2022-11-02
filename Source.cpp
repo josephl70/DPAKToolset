@@ -47,7 +47,7 @@ void Compression(std::string Filename, bool bDecompress)
 
             vector<uint8_t> compressedBuffer((unsigned int)size);
             mz_ulong compressedSizeLong = (mz_ulong)size;
-            compress2(compressedBuffer.data(), &compressedSizeLong, fileBuffer.data(), (mz_ulong)size, 10);
+            compress(compressedBuffer.data(), &compressedSizeLong, fileBuffer.data(), (mz_ulong)size);
 
             std::ofstream NewFile(Filename + "_Compressed", std::ios::out | std::ofstream::binary);
             NewFile.write((char*)&compressedBuffer[0], compressedSizeLong);
@@ -206,7 +206,7 @@ void Handler(std::string Filename, bool bDecompile)
             }
             else if (Magic == 1836597052 || Magic == 1010792557) //XML File
             {
-                Handler(Filename, false);
+                Compression(Filename, false);
             }
             else if(uint8_t(Magic) == 120 || uint16_t(Magic) == 40056 || uint16_t(Magic) == 30876) //First is DPAK compression, Last two are XMC compression
             {

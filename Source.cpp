@@ -15,12 +15,12 @@ using namespace std;
 void Compression(std::string Filename, bool bDecompress)
 {
     std::fstream::pos_type size = 0;
+    if (std::ifstream fileSize{ Filename, std::ios::binary | std::ios::in | std::ios::ate })
+    {
+        size = fileSize.tellg();
+    }
     if (bDecompress)
     {
-        if (std::ifstream fileSize{ Filename, std::ios::binary | std::ios::in | std::ios::ate })
-        {
-            size = fileSize.tellg();
-        }
         if (std::ifstream file{ Filename, std::ios::binary })
         {
             std::vector<uint8_t> fileBuffer((unsigned int)size);
@@ -40,15 +40,10 @@ void Compression(std::string Filename, bool bDecompress)
     }
     else
     {
-        if (std::ifstream fileSize{ Filename, std::ios::binary | std::ios::in | std::ios::ate })
-        {
-            size = fileSize.tellg();
-        }
         if (std::ifstream file{ Filename, std::ios::binary })
         {
             std::vector<uint8_t> fileBuffer((unsigned int)size);
             file.read((char*)fileBuffer.data(), fileBuffer.size());
-
 
             vector<uint8_t> compressedBuffer((unsigned int)size);
             mz_ulong compressedSizeLong = (mz_ulong)size;
@@ -142,6 +137,7 @@ void ExtractDPAK(std::string Filename)
         }
     }
 }
+
 void PackageDPAK(std::string Folder)
 {
     std::filesystem::path folderPath(Folder);
@@ -231,27 +227,7 @@ void Handler(std::string Filename, bool bDecompile)
 
 int main(int argc, char** argv)
 {
-    bool bIsDirectory = false;
-    struct stat s;
-    if (stat(argv[1], &s) == 0)
-    {
-        if (s.st_mode & S_IFDIR)
-        {
-            bIsDirectory = true;
-        }
-    }
-    string fn = argv[1];
-#if !NDEBUG
-    cout << fn << "\n";
-#endif
-    if (bIsDirectory)
-    {
-        Handler(argv[1], false);
-    }
-    else
-    {
-        Handler(argv[1], true);
-    }
+    Handler(argv[1], !filesystem::is_directory(argv[1]));
     system("pause");
     return 0;
 }
